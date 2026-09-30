@@ -155,6 +155,23 @@ textarea{min-height:120px;resize:vertical}
   <section id="feedView" class="stack">
     <div class="card mission" id="mission"></div>
     <div class="card" id="badgeWall"></div>
+    <div class="card stack" id="ioCard">
+      <p class="bh" style="margin:0"><b>📦 帶回來討論・備份</b></p>
+      <div class="pa" style="margin:0">
+        <button class="pbtn" id="allClaude">📋 全部複製給 Claude</button>
+        <button class="pbtn" id="expAll">💾 匯出備份</button>
+        <button class="pbtn" id="impAll">📥 匯入備份</button>
+      </div>
+      <div id="ioPanel" class="stack" hidden>
+        <label for="ioBox" id="ioLabel"></label>
+        <textarea id="ioBox"></textarea>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-items:center">
+          <label class="pbtn" id="ioFileWrap" hidden>選檔案<input type="file" id="ioFile" accept=".json,application/json" hidden></label>
+          <button class="ghost" id="ioDl" hidden>下載檔案</button>
+          <button class="btn" id="ioAct"></button>
+        </div>
+      </div>
+    </div>
     <p class="rule">先自己讀完原文再貼進來。網友的問題和反應都是內建的，不用 AI、不吃額度。資料只存在這支手機的瀏覽器，記得用「匯出筆記」備份。</p>
     <form id="composer" class="card stack" hidden>
       <div class="stack" style="gap:6px"><label for="cTitle">文獻（作者＋年份＋短標題）</label>
@@ -178,12 +195,13 @@ textarea{min-height:120px;resize:vertical}
   <section id="threadView" hidden>
     <div class="card"><div class="thread" id="thread"></div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="ghost" id="askBtn">📋 複製給 Claude 討論</button>
       <button class="ghost" id="exportBtn">匯出筆記</button>
       <button class="ghost danger" id="delBtn">刪除這串</button>
       <button class="ghost danger" id="delYes" hidden>確定刪除</button>
     </div>
     <div class="card stack" id="exportPanel" hidden style="margin-top:8px">
-      <label for="exportBox">Markdown 筆記（可貼進 Notion／Obsidian）</label>
+      <label for="exportBox" id="exportLabel">Markdown 筆記（可貼進 Notion／Obsidian）</label>
       <textarea id="exportBox" readonly></textarea>
       <div style="display:flex;justify-content:flex-end"><button class="btn" id="copyBtn">複製</button></div>
     </div>
@@ -594,9 +612,40 @@ $('replyForm').addEventListener('submit',e=>{e.preventDefault();
   if(ama)run(th,amaReact(ama),ama.pass?null:'ama');
   else run(th,reactionsFor(v))});
 $('replyBox').addEventListener('input',e=>{e.target.style.height='auto';e.target.style.height=Math.min(e.target.scrollHeight,160)+'px'});
-$('exportBtn').onclick=()=>{$('exportBox').value=exportMd(cur);$('exportPanel').hidden=false};
-$('copyBtn').onclick=()=>{const box=$('exportBox');
-  navigator.clipboard.writeText(box.value).then(()=>toast('已複製')).catch(()=>{box.focus();box.select();toast('已全選，請手動複製')})};
+function copyBox(box,msg){navigator.clipboard.writeText(box.value).then(()=>toast(msg||'已複製'))
+  .catch(()=>{box.focus();box.select();toast('已全選，請手動複製')})}
+function claudePrompt(ths,withStars){
+  let s='以下是我在「論文脆」裡自己讀文獻後寫的回答。請幫我：\n1. 指出我哪裡講得含糊，或可能誤解了原文\n2. 找出這些文獻之間的分歧和共同缺口（用「A認為……但B發現……」）\n3. 建議哪些可以寫進論文，放在哪一章\n請不要替我重寫答案，用提問幫我想清楚。\n\n';
+  s+=ths.filter(t=>t.items.some(i=>i.who==='me')).map(exportMd).join('\n\n---\n\n');
+  if(withStars){const st=Object.values(C().papers).filter(p=>p.star);
+    if(st.length)s+='\n\n---\n\n## 我收藏、還沒開串的論文\n'+st.map(p=>`- ${p.authors[0]||''}${p.year?`（${p.year}）`:''}${p.title}　${p.url}`).join('\n')}
+  return s.trim()}
+$('exportBtn').onclick=()=>{$('exportLabel').textContent='Markdown 筆記（可貼進 Notion／Obsidian）';$('exportBox').value=exportMd(cur);$('exportPanel').hidden=false};
+$('askBtn').onclick=()=>{$('exportLabel').textContent='複製後貼給 Claude，就能針對這串深入討論';$('exportBox').value=claudePrompt([cur]);$('exportPanel').hidden=false;copyBox($('exportBox'),'已複製，去貼給 Claude')};
+$('copyBtn').onclick=()=>copyBox($('exportBox'));
+/* 匯出匯入 */
+let ioMode='';
+function ioOpen(mode){ioMode=mode;const box=$('ioBox');$('ioPanel').hidden=false;
+  $('ioFileWrap').hidden=mode!=='imp';$('ioDl').hidden=mode!=='exp';box.readOnly=mode!=='imp';
+  if(mode==='claude'){$('ioLabel').textContent='所有有回答的串＋收藏清單。複製後貼給 Claude';box.value=claudePrompt(state.threads,true);$('ioAct').textContent='複製';copyBox(box,'已複製，去貼給 Claude')}
+  if(mode==='exp'){$('ioLabel').textContent='完整備份（串文、進度、徽章、爬文池）。複製存起來，或下載成檔案';
+    box.value=JSON.stringify({app:'paper-threads',v:2,exported:new Date().toISOString(),threads:state.threads,stats:state.stats,crawl:C()});$('ioAct').textContent='複製'}
+  if(mode==='imp'){$('ioLabel').textContent='貼上之前匯出的備份，或選檔案。已經有的不會重複';box.value='';box.placeholder='{"app":"paper-threads",…}';$('ioAct').textContent='匯入';box.focus()}}
+function importData(txt){let o;try{o=JSON.parse(txt)}catch(e){toast('格式不對：請貼完整的備份文字');return}
+  if(!o||o.app!=='paper-threads'){toast('這不是論文脆的備份');return}
+  let n=0;(o.threads||[]).forEach(t=>{if(!state.threads.some(x=>x.id===t.id)){state.threads.push(t);n++}});
+  if(o.crawl&&o.crawl.papers){const c=C();Object.values(o.crawl.papers).forEach(p=>{if(!c.papers[p.id])c.papers[p.id]=p;else if(p.star)c.papers[p.id].star=true})}
+  if(o.stats){const s=state.stats;s.xp=Math.max(s.xp,o.stats.xp||0);s.total=Math.max(s.total,o.stats.total||0);
+    s.streak=Math.max(s.streak,o.stats.streak||0);s.badges=Object.assign({},o.stats.badges||{},s.badges)}
+  save();renderList();renderStatsAll();$('ioPanel').hidden=true;toast(`匯入完成：新增 ${n} 串`)}
+$('allClaude').onclick=()=>ioOpen('claude');
+$('expAll').onclick=()=>ioOpen('exp');
+$('impAll').onclick=()=>ioOpen('imp');
+$('ioAct').onclick=()=>{if(ioMode==='imp')importData($('ioBox').value.trim());else copyBox($('ioBox'))};
+$('ioDl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('ioBox').value],{type:'application/json'}));
+  a.download=`論文脆備份-${dayKey()}.json`;document.body.appendChild(a);a.click();a.remove()};
+$('ioFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{$('ioBox').value=r.result;importData(String(r.result))};r.readAsText(f);e.target.value=''};
 $('delBtn').onclick=()=>{$('delYes').hidden=false};
 $('delYes').onclick=()=>{state.threads=state.threads.filter(t=>t!==cur);save();show('feed');toast('已刪除')};
 
