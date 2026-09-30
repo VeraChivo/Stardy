@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>論文脆</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: Threads-style feed. Original post on top, a crowd of named 網友 reply under it, your replies in green, reactions + hearts + XP give instant reward. */
+:root{color-scheme:light;
+  --bg:#EEF1F5; --card:#FFFFFF; --ink:#18202C; --muted:#667085; --line:#DCE1E8;
+  --accent:#2F5D8A; --accent-soft:#E1EAF3; --me:#DFF1E8; --me-ink:#1E4D38;
+  --quote:#F6F4EE; --heart:#E0455A; --gold:#C98A12; --gold-soft:#FBEFD2;
+  --display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161D; --card:#1A2029; --ink:#E7ECF2; --muted:#96A1B0; --line:#2A323E;
+  --accent:#8DB5DC; --accent-soft:#223244; --me:#1D3A2E; --me-ink:#BFE6D0; --quote:#222830;
+  --heart:#F0738A; --gold:#E8B84A; --gold-soft:#3A2F16; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161D; --card:#1A2029; --ink:#E7ECF2; --muted:#96A1B0; --line:#2A323E;
+  --accent:#8DB5DC; --accent-soft:#223244; --me:#1D3A2E; --me-ink:#BFE6D0; --quote:#222830;
+  --heart:#F0738A; --gold:#E8B84A; --gold-soft:#3A2F16; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:0 130px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 10px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.hrow{display:flex;align-items:center;gap:12px}
+header h1{font-family:var(--display);font-size:26px;margin:0;font-weight:400;letter-spacing:.02em;line-height:1.2}
+.sub{color:var(--muted);font-size:13px}
+.sp{flex:1}
+button{font:inherit;cursor:pointer;border:none;border-radius:999px;color:inherit;background:none}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{background:var(--accent);color:var(--card);padding:8px 16px;font-weight:700;font-size:15px}
+.ghost{color:var(--accent);padding:6px 10px;font-size:14px;font-weight:500}
+.back{background:var(--card);width:40px;height:40px;font-size:20px;border:1px solid var(--line)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+.stack{display:flex;flex-direction:column;gap:12px}
+label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=text],textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+input:not([type=checkbox]){width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+textarea{min-height:120px;resize:vertical}
+/* stats */
+.stats{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;font-variant-numeric:tabular-nums}
+.lv{background:var(--gold-soft);color:var(--gold);font-weight:700;border-radius:999px;padding:2px 10px;white-space:nowrap}
+.xpbar{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden;min-width:40px}
+.xpbar i{display:block;height:100%;background:var(--gold);border-radius:99px;transition:width .4s}
+.fire{white-space:nowrap;color:var(--muted)}
+.mission{display:flex;align-items:center;gap:12px}
+.mission .dots{display:flex;gap:6px}
+.mission .dots b{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--card)}
+.mission .dots b.on{background:var(--accent);border-color:var(--accent)}
+.mission p{margin:0;font-size:14px}
+.mission small{color:var(--muted)}
+/* feed items */
+.item{display:flex;gap:12px;text-align:left;width:100%;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.item .col{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.item .t{font-weight:700;font-size:15.5px}
+.item .ex{color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.meta{display:flex;gap:14px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.tag{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 8px;font-size:12px;font-weight:500;white-space:nowrap}
+/* posts */
+.post{display:flex;gap:12px}
+.av{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:20px}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.who{font-weight:700;font-size:14.5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.who .h{font-weight:400;color:var(--muted);font-size:13px}
+.who .ts{font-weight:400;color:var(--muted);font-size:12.5px;margin-left:auto}
+.body{white-space:pre-wrap;overflow-wrap:anywhere}
+.quote{background:var(--quote);border-radius:12px;padding:12px 14px;font-size:15px;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:4px}
+.thread{display:flex;flex-direction:column}
+.thread .post{padding-block:14px;border-bottom:1px solid var(--line);animation:pop .3s ease-out}
+.thread .post:last-child{border-bottom:none}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.me .body{background:var(--me);color:var(--me-ink);border-radius:4px 14px 14px 14px;padding:8px 12px;align-self:flex-start}
+.react .body{font-size:15px}
+.acts{display:flex;gap:6px;margin-top:2px;align-items:center;flex-wrap:wrap}
+.like{display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:13.5px;padding:4px 8px;border-radius:999px;font-variant-numeric:tabular-nums}
+.like.on{color:var(--heart)}
+.like.on .hi{animation:beat .35s}
+@keyframes beat{50%{transform:scale(1.5)}}
+.xp{color:var(--gold);font-size:12.5px;font-weight:700;background:var(--gold-soft);border-radius:99px;padding:1px 8px}
+.typing{color:var(--muted);font-size:14px;padding-block:12px}
+.typing i{display:inline-block;animation:blink 1.2s infinite;font-style:normal}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.typing i,.thread .post,.like.on .hi{animation:none}.xpbar i{transition:none}}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.bar .in{max-width:560px;margin:0 auto;display:flex;gap:8px;align-items:flex-end}
+.bar textarea{min-height:44px;max-height:160px;border-radius:22px;padding:10px 16px;resize:none}
+.toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px;z-index:9;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+.empty{text-align:center;color:var(--muted);padding-block:24px;font-size:14px}
+.rule{font-size:13px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:10px 14px;margin:0}
+#exportBox{min-height:180px;font-size:13px}
+.danger{color:#B4453A}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.tabs,.chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tabs{margin-top:10px}
+.tab,.chip{padding:6px 14px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-size:14px;font-weight:500}
+.tab.on,.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.paper{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:6px;animation:pop .3s ease-out}
+.paper h3{margin:0;font-size:17px;line-height:1.45;text-wrap:balance;overflow-wrap:anywhere}
+.why{font-size:12.5px;color:var(--accent);font-weight:500}
+.pm{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.abs{margin:0;font-size:14.5px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.paper.open .abs{display:block;-webkit-line-clamp:unset}
+.paper.open [data-a="more"]{display:none}
+.pa{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.pbtn{font-size:13.5px;padding:6px 12px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--ink);text-decoration:none}
+.pbtn.on{background:var(--gold-soft);color:var(--gold);border-color:transparent}
+@media (prefers-reduced-motion:reduce){.paper{animation:none}}
+.chk{display:flex;gap:8px;align-items:flex-start;color:var(--ink);font-size:14px}
+.chk input{width:auto;margin-top:5px}
+.bh{margin:0 0 8px;display:flex;justify-content:space-between;font-size:14px}
+.bh span{color:var(--muted);font-variant-numeric:tabular-nums}
+.bds{display:flex;flex-wrap:wrap;gap:6px}
+.bd{display:inline-flex;gap:4px;align-items:center;padding:3px 10px;border-radius:99px;background:var(--gold-soft);color:var(--gold);font-size:13px;font-weight:500}
+.bd.off{background:var(--bg);color:var(--muted);border:1px dashed var(--line);font-weight:400}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="hrow">
+      <button class="back" id="backBtn" hidden aria-label="回到串文列表">‹</button>
+      <div>
+        <h1>論文脆</h1>
+        <div class="sub" id="subline">貼一段原文，網友來問，妳來答</div>
+      </div>
+      <div class="sp"></div>
+      <button class="btn" id="newBtn">＋ 發串</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="tabs" id="tabs"><button class="tab on" data-v="feed">💬 串文</button><button class="tab" data-v="crawl">🎲 爬文</button></div>
+  </header>
+
+  <section id="crawlView" class="stack" hidden>
+    <div class="card stack">
+      <label for="seedBox">貼論文網址、DOI，或打關鍵字（一行一個，可以一次貼一堆）</label>
+      <textarea id="seedBox" placeholder="https://doi.org/10.xxxx/xxxxx&#10;https://arxiv.org/abs/2401.01234&#10;collaborative proactive solutions"></textarea>
+      <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap">
+        <button class="ghost" id="seedDemo" type="button">填入範例關鍵字</button>
+        <button class="btn" id="seedBtn" type="button">加入爬文池</button>
+      </div>
+    </div>
+    <div class="chips"><button class="chip on" data-mode="rand">🎲 隨機逛</button><button class="chip" data-mode="star">⭐ 我的收藏</button><span class="hint" id="crawlMeta"></span></div>
+    <p class="rule" id="crawlNote"></p>
+    <div id="cards" class="stack"></div>
+    <div id="sentinel" class="empty"></div>
+  </section>
+
+  <section id="feedView" class="stack">
+    <div class="card mission" id="mission"></div>
+    <div class="card" id="badgeWall"></div>
+    <p class="rule">先自己讀完原文再貼進來。網友的問題和反應都是內建的，不用 AI、不吃額度。資料只存在這支手機的瀏覽器，記得用「匯出筆記」備份。</p>
+    <form id="composer" class="card stack" hidden>
+      <div class="stack" style="gap:6px"><label for="cTitle">文獻（作者＋年份＋短標題）</label>
+        <input type="text" id="cTitle" placeholder="例：王（2019）動機與學習成效" required></div>
+      <div class="stack" style="gap:6px"><label for="cText">原文段落（自己讀過、畫過線的那一段）</label>
+        <textarea id="cText" placeholder="貼上一段原文…" required></textarea></div>
+      <label class="chk"><input type="checkbox" id="cPdf" checked>
+        <span>修正 PDF 斷行（從 PDF 複製貼上時打勾）</span></label>
+      <label class="chk"><input type="checkbox" id="cWhole">
+        <span>整篇論文：自動切成多串（每串約 200 字以上），標題加「第N段」</span></label>
+      <label class="chk"><input type="checkbox" id="cTheme" checked>
+        <span>加入我的研究主題題（ND、CPS、EPSS、TTM）</span></label>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="ghost" id="cCancel">取消</button>
+        <button type="submit" class="btn">發串文</button>
+      </div>
+    </form>
+    <div id="list" class="stack"></div>
+  </section>
+
+  <section id="threadView" hidden>
+    <div class="card"><div class="thread" id="thread"></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="ghost" id="exportBtn">匯出筆記</button>
+      <button class="ghost danger" id="delBtn">刪除這串</button>
+      <button class="ghost danger" id="delYes" hidden>確定刪除</button>
+    </div>
+    <div class="card stack" id="exportPanel" hidden style="margin-top:8px">
+      <label for="exportBox">Markdown 筆記（可貼進 Notion／Obsidian）</label>
+      <textarea id="exportBox" readonly></textarea>
+      <div style="display:flex;justify-content:flex-end"><button class="btn" id="copyBtn">複製</button></div>
+    </div>
+  </section>
+</div>
+
+<div class="bar" id="bar" hidden>
+  <form class="in" id="replyForm">
+    <textarea id="replyBox" rows="1" placeholder="回覆大家…（用自己的話）" aria-label="回覆"></textarea>
+    <button class="btn" type="submit">回覆</button>
+  </form>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const PERSONAS={
+  junior:{tag:'碩一',av:['🐣','🌱','📚'],names:['小芸','阿倫','還沒選題的Amy','剛入學的小豪']},
+  prof:{tag:'教授',av:['🧑‍🏫','🦉'],names:['沒空回信的老師','某系副教授','Dr.所以呢']},
+  r2:{tag:'審稿人',av:['🧐','🔍'],names:['Reviewer2','退稿收集家','匿名審稿人']},
+  devil:{tag:'槓精',av:['🌶️','😈','🤨'],names:['槓精阿北','我就問問','魔鬼代言人']},
+  future:{tag:'未來',av:['🎓','🔮'],names:['口試完的妳','一年後的妳']},
+  fan:{tag:'鄉民',av:['😂','👏','🍿'],names:['路過鄉民','吃瓜群眾','潛水十年']},
+  ama:{tag:'阿嬤',av:['👵'],names:['隔壁阿嬤','巷口阿嬤']},
+  parent:{tag:'家長',av:['👩‍👧','🧑‍🍼'],names:['三寶媽','ND孩子的爸','家長會長']},
+  teacher:{tag:'老師',av:['🍎','📝'],names:['新進老師小林','普通班導師','代課老師']},
+};
+const BANK=[
+  {id:'own',p:'junior',q:'學姊我看不太懂😵 可以用妳自己的話，兩三句講這段在說什麼嗎？不要照抄喔',first:true},
+  {id:'claim',p:'prof',q:'這段的核心主張是什麼？一句話講完。'},
+  {id:'evid',p:'r2',q:'作者用什麼證據支撐這個主張？樣本是誰、多少人、用什麼方法？原文有寫清楚嗎？'},
+  {id:'sample',p:'devil',q:'如果換一群人（年級、地區、族群）做同一件事，結果還會一樣嗎？為什麼？'},
+  {id:'var',p:'r2',q:'這裡講的關係，是相關還是因果？有沒有可能是別的變項在影響（中介？調節？）'},
+  {id:'disagree',p:'devil',q:'有沒有妳讀過的哪篇文獻，講的跟這段不一樣？用「A認為……但B發現……」寫一句看看。'},
+  {id:'gap',p:'prof',q:'讀完這段，有什麼是作者「沒回答」或「沒做」的？那可能就是缺口。'},
+  {id:'limit',p:'r2',q:'作者自己承認的限制是什麼？妳覺得還有他沒講到的限制嗎？'},
+  {id:'term',p:'junior',q:'這段有沒有哪個專有名詞妳其實不太確定意思？先寫下來，之後去查定義。'},
+  {id:'surprise',p:'devil',q:'這段有哪一句讓妳覺得「咦？」或卡住？卡住的地方常常最有料。'},
+  {id:'method',p:'prof',q:'如果妳要用質性方法（訪談）來研究同一個問題，會問受訪者什麼？'},
+  {id:'solved',p:'prof',q:'這篇想解決的問題，解決到什麼程度了？還剩什麼沒解決？'},
+  {id:'ama',p:'ama',q:'乖孫，這段到底在講啥？50 個字以內講給阿嬤聽，不要用英文、不要用那些專有名詞喔👵'},
+  {id:'nd_cps',p:'teacher',theme:true,q:'用 CPS（Ross Greene）的角度看：如果這段講的是孩子的行為，他背後可能是缺了哪一項技能，而不是不想做？'},
+  {id:'nd_epss',p:'teacher',theme:true,q:'這段有沒有什麼可以變成老師「當下查得到、馬上能用」的一句話？試著寫一句中性的說法。'},
+  {id:'nd_ttm',p:'parent',theme:true,q:'如果家長還沒準備好接受（階段改變模式的前期），聽到這段會有什麼反應？要怎麼說比較好入口？'},
+  {id:'nd_voice',p:'parent',theme:true,q:'這段的資料是誰說的？家長、老師，還是孩子本人？少了誰的視角？'},
+  {id:'nd_res',p:'r2',theme:true,q:'如果要照這段去做，需要多少資源？教室內就可行、需要協調，還是建議轉介？'},
+  {id:'mine',p:'future',q:'這段跟妳自己的研究有什麼關係？妳會放在論文第幾章、拿來支持什麼？',last:true},
+];
+// 反應題庫：依妳的回答特徵觸發
+const REACT={
+  short:[{p:'devil',t:'只有這樣？再多說一句啦😂'},{p:'fan',t:'太省了吧，學姊再寫三句看看🍿'}],
+  but:[{p:'prof',t:'「但」字加分！文獻開始對話了💬'},{p:'fan',t:'有抓到分歧欸，這就是探討的火種🔥'}],
+  because:[{p:'r2',t:'有講理由，比很多初稿強👏'},{p:'junior',t:'因為…所以…，邏輯有出來了，我要抄筆記'}],
+  digit:[{p:'r2',t:'連數字都抓到了，細心。'},{p:'fan',t:'樣本數有記下來，讚👍'}],
+  unsure:[{p:'prof',t:'承認不確定也是進度，先標起來之後查🏷️'},{p:'junior',t:'學姊也有不懂的，我安心了😭'}],
+  long:[{p:'junior',t:'哇寫這麼多，學姊認真😭'},{p:'fan',t:'這段可以直接貼進筆記了📝'}],
+  plain:[{p:'fan',t:'+1'},{p:'junior',t:'有道理，筆記起來📝'},{p:'fan',t:'學姊好強👏'}],
+};
+const LV=[{xp:0,n:'路人'},{xp:30,n:'潛水員'},{xp:80,n:'常客'},{xp:150,n:'熱心網友'},{xp:250,n:'版主'},{xp:400,n:'大老'}];
+const GOAL=3,KEY='paper-threads-v2';
+let state={threads:[],stats:{xp:0,streak:0,last:'',today:'',todayCount:0,total:0}};
+let cur=null,busy=false;
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rnd=()=>Math.floor(Math.random()*90)+3;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const dayKey=(d=new Date())=>`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+const TQ=[];let tBusy=false;
+function toast(m){TQ.push(m);if(!tBusy)nextToast()}
+function nextToast(){const m=TQ.shift();if(!m){tBusy=false;return}tBusy=true;
+  const t=$('toast');t.textContent=m;t.hidden=false;setTimeout(()=>{t.hidden=true;setTimeout(nextToast,200)},1800)}
+
+function load(){
+  try{const s=localStorage.getItem(KEY)||localStorage.getItem('paper-threads-v1');if(s){const o=JSON.parse(s);state.threads=o.threads||[];if(o.stats)state.stats=o.stats}}catch(e){}
+  if(!state.threads.length)state.threads=[sample()];
+  state.threads.forEach(t=>{if(t.likes==null)t.likes=rnd();if(!t.cast)t.cast={}});
+  state.stats.badges=state.stats.badges||{};
+  const k=dayKey();if(state.stats.today!==k){state.stats.today=k;state.stats.todayCount=0}
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function sample(){return{id:'sample',title:'（範例）虛構文獻：生成式AI使用方式與學業自我效能',
+  text:'本研究調查四所大學612位學生，將生成式AI使用分為代勞型與輔助型。結果顯示，輔助型使用與學業自我效能呈正相關，代勞型使用則呈負相關，整體使用頻率本身未達顯著。',
+  created:Date.now(),likes:128,cast:{},items:[{who:'bot',qid:'own',likes:24},{who:'me',text:'這篇在說：用AI的「方式」比用多少更重要。拿AI幫忙解釋概念的學生比較有自信，讓AI直接代寫的反而比較沒自信。',xp:20},{who:'bot',kind:'react',p:'prof',text:'「但」字加分！文獻開始對話了💬',likes:41},{who:'bot',qid:'var',likes:17}]}}
+
+/* 網友 */
+function who(th,p){
+  if(!th.cast[p]){const P=PERSONAS[p];th.cast[p]={name:pick(P.names),av:pick(P.av),h:'@'+p+'_'+Math.floor(Math.random()*9000+1000),hue:Math.floor(Math.random()*360)}}
+  return th.cast[p];
+}
+function avStyle(h){return `background:hsl(${h} 55% 55% / .28)`}
+function postHTML({av,name,tag,handle,body,cls='',hue=210,acts='',ts='剛剛'}){
+  return `<div class="post ${cls}"><div class="av" style="${avStyle(hue)}" aria-hidden="true">${av}</div><div class="col">
+    <div class="who">${esc(name)}${tag?`<span class="tag">${tag}</span>`:''}<span class="h">${esc(handle||'')}</span><span class="ts">${ts}</span></div>${body}${acts}</div></div>`}
+function likeBtn(i,n,on){return `<button class="like ${on?'on':''}" data-like="${i}" aria-label="按讚"><span class="hi">${on?'♥':'♡'}</span>${n}</button>`}
+
+/* 統計 */
+function level(){const x=state.stats.xp;let i=0;LV.forEach((l,k)=>{if(x>=l.xp)i=k});return i}
+function renderStats(){
+  const s=state.stats,i=level(),cur=LV[i],nx=LV[i+1];
+  const pct=nx?Math.round((s.xp-cur.xp)/(nx.xp-cur.xp)*100):100;
+  $('stats').innerHTML=`<span class="lv">Lv.${i+1} ${cur.n}</span><span class="xpbar" aria-hidden="true"><i style="width:${pct}%"></i></span><span class="fire">${s.xp} XP · 🔥${s.streak}天</span>`;
+  const m=$('mission');if(m){const n=Math.min(s.todayCount,GOAL);
+    m.innerHTML=`<div class="dots" aria-hidden="true">${Array.from({length:GOAL},(_,k)=>`<b class="${k<n?'on':''}">✓</b>`).join('')}</div>
+      <div><p><b>今日任務：回 ${GOAL} 題</b></p><small>${n>=GOAL?'達成！今天的妳已經贏了🎉':`還差 ${GOAL-n} 題，一題就好也算有動`}</small></div>`}
+}
+function gain(text,bonus=0){
+  const s=state.stats;let xp=10+bonus;
+  if(text.length>=40)xp+=5;if(/但|然而|可是/.test(text))xp+=5;if(/因為|由於/.test(text))xp+=5;
+  const before=level();
+  s.xp+=xp;s.total++;s.todayCount++;
+  const k=dayKey(),y=new Date();y.setDate(y.getDate()-1);
+  if(s.last!==k){s.streak=(s.last===dayKey(y))?s.streak+1:1;s.last=k}
+  if(s.todayCount===GOAL)setTimeout(()=>toast('🎉 今日任務完成'),300);
+  else if(level()>before)setTimeout(()=>toast(`⬆️ 升級！Lv.${level()+1} ${LV[level()].n}`),300);
+  renderStats();return xp;
+}
+function renderStatsAll(){renderStats();renderBadges()}
+
+/* 列表 */
+function fmt(t){const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()}`}
+function renderList(){
+  const L=$('list');L.innerHTML='';
+  if(!state.threads.length){L.innerHTML='<div class="empty">還沒有串文。按右上「＋ 發串」貼第一段原文。</div>';return}
+  [...state.threads].sort((a,b)=>b.created-a.created).forEach(th=>{
+    const a=th.items.filter(i=>i.who==='me').length,c=th.items.length;
+    const b=document.createElement('button');b.className='item';
+    b.innerHTML=`<div class="av" style="${avStyle(210)}" aria-hidden="true">📄</div><div class="col">
+      <span class="t">${esc(th.title)}</span><span class="ex">${esc(th.text)}</span>
+      <span class="meta"><span>♡ ${th.likes}</span><span>💬 ${c}</span><span class="tag">已回 ${a} 題</span><span>${fmt(th.created)}</span></span></div>`;
+    b.onclick=()=>openThread(th.id);L.appendChild(b)});
+}
+
+/* 單串 */
+function awaiting(th){const l=th.items[th.items.length-1];return !!(l&&l.who==='bot'&&l.qid)}
+function renderThread(){
+  const th=cur;if(!th)return;let h='';
+  h+=postHTML({av:'📄',name:'我',tag:'原文',handle:'@剛貼上的',hue:210,
+    body:`<div class="body" style="font-weight:700">${esc(th.title)}</div><div class="quote">${esc(th.text)}</div>`,
+    acts:`<div class="acts">${likeBtn(-1,th.likes,th.liked)}</div>`,ts:fmt(th.created)});
+  th.items.forEach((it,i)=>{
+    if(it.who==='me'){
+      h+=postHTML({av:'🙋',name:'我',handle:'@自己讀過',cls:'me',hue:150,body:`<div class="body">${esc(it.text)}</div>`,
+        acts:`<div class="acts">${it.xp?`<span class="xp">+${it.xp} XP</span>`:''}${likeBtn(i,it.likes||0,it.liked)}</div>`});
+    }else{
+      const isQ=!!it.qid;const q=isQ?BANK.find(b=>b.id===it.qid):null;const p=isQ?q.p:it.p;
+      const w=who(th,p),P=PERSONAS[p];
+      const last=i===th.items.length-1&&isQ&&!busy;
+      h+=postHTML({av:w.av,name:w.name,tag:P.tag,handle:w.h,hue:w.hue,cls:isQ?'':'react',
+        body:`<div class="body">${esc(isQ?q.q:it.text)}</div>`,
+        acts:`<div class="acts">${likeBtn(i,it.likes||0,it.liked)}${last?'<button class="ghost" data-act="swap">換一題</button>':''}</div>`});
+    }
+  });
+  if(busy)h+=`<div class="typing">有人正在輸入<i>．</i><i>．</i><i>．</i></div>`;
+  if(!busy&&!awaiting(th)&&th.items.length)h+=`<div class="empty">這串問完了 🎉 按下面「匯出筆記」存起來</div>`;
+  $('thread').innerHTML=h;
+  $('bar').hidden=!(awaiting(th)&&!busy);
+}
+$('thread').addEventListener('click',e=>{
+  const l=e.target.closest('[data-like]');
+  if(l){const i=+l.dataset.like;
+    if(i<0){cur.liked=!cur.liked;cur.likes+=cur.liked?1:-1}
+    else{const it=cur.items[i];it.liked=!it.liked;it.likes=(it.likes||0)+(it.liked?1:-1)}
+    save();renderThread();return}
+  if(e.target.closest('[data-act="swap"]'))swap();
+});
+function used(items){return items.filter(i=>i.qid).map(i=>i.qid)}
+function nextQ(items,exclude=[],theme=false){
+  const u=used(items).concat(exclude);
+  if(!u.includes('own'))return BANK.find(b=>b.first);
+  const ok=b=>!b.first&&!b.last&&(!b.theme||theme);
+  const mid=BANK.filter(b=>ok(b)&&!u.includes(b.id));
+  const asked=new Set(u.filter(id=>{const b=BANK.find(x=>x.id===id);return b&&ok(b)})).size;
+  if(mid.length&&asked<(theme?6:5)){
+    const tq=mid.filter(b=>b.theme);
+    if(theme&&tq.length&&asked>=2&&!u.some(id=>BANK.find(b=>b.id===id&&b.theme)))return pick(tq);
+    return pick(mid)}
+  const last=BANK.find(b=>b.last);return u.includes(last.id)?null:last;
+}
+function swap(){
+  const l=cur.items[cur.items.length-1];
+  const q=nextQ(cur.items.slice(0,-1),[l.qid],cur.theme);
+  if(!q||q.id===l.qid){toast('題庫裡沒有別題了');return}
+  l.qid=q.id;l.likes=rnd();save();renderThread();
+}
+function scrollEnd(){window.scrollTo({top:document.body.scrollHeight,behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'})}
+function reactionsFor(text){
+  let k='plain';
+  if(text.length<15)k='short';
+  else if(/不確定|不知道|看不懂|不太懂/.test(text))k='unsure';
+  else if(/但|然而|可是/.test(text))k='but';
+  else if(/因為|由於/.test(text))k='because';
+  else if(/\d/.test(text))k='digit';
+  else if(text.length>=60)k='long';
+  const pool=[...REACT[k]];const out=[pick(pool)];
+  if(Math.random()<.6)out.push(pick(REACT.plain.filter(r=>r.t!==out[0].t)));
+  return out.map(r=>({who:'bot',kind:'react',p:r.p,text:r.t,likes:rnd()}));
+}
+async function run(th,reacts,retry){
+  busy=true;if(cur===th){renderThread();scrollEnd()}
+  await wait(800);
+  for(const r of reacts){th.items.push(r);save();if(cur===th){renderThread();scrollEnd()}await wait(800)}
+  const q=retry?BANK.find(b=>b.id===retry):nextQ(th.items,[],th.theme);
+  if(q){th.items.push({who:'bot',qid:q.id,likes:rnd()})}
+  else if(th.items.some(i=>i.who==='me'))unlock('finish');
+  busy=false;save();if(cur===th){renderThread();scrollEnd()}
+}
+/* 阿嬤挑戰 */
+const JARGON=/[A-Za-z]{3,}|顯著|變項|變數|迴歸|樣本|自我效能|中介|調節|效度|信度|相關係數|假設|理論框架|操作型定義|p值/g;
+function judgeAma(v){
+  const len=[...v.replace(/\s/g,'')].length,jar=[...new Set(v.match(JARGON)||[])];
+  return {pass:len<=50&&!jar.length,len,jar}}
+function amaReact(r){
+  const R=(p,t)=>({who:'bot',kind:'react',p,text:t,likes:rnd()});
+  if(r.pass)return [R('ama','阿嬤聽懂了！乖孫好厲害👵❤️ ＋15 XP'),R('fan','阿嬤認證，這句可以直接放進摘要了')];
+  if(r.len>50)return [R('ama',`太長啦，${r.len} 個字，阿嬤聽到睡著😴 再濃縮成 50 字以內`)];
+  return [R('ama',`「${r.jar.slice(0,3).join('、')}」是啥？阿嬤聽不懂啦😵 換個說法再講一次`)];
+}
+/* 徽章 */
+const BADGES=[
+  {id:'first',n:'破冰',i:'🧊',how:'第一次回覆'},
+  {id:'but',n:'對話製造機',i:'💬',how:'回覆裡用到「但」'},
+  {id:'long',n:'長文達人',i:'📜',how:'一次回 80 字以上'},
+  {id:'honest',n:'誠實小天使',i:'😇',how:'承認看不懂'},
+  {id:'ama',n:'阿嬤聽懂了',i:'👵',how:'通過阿嬤挑戰'},
+  {id:'theme',n:'研究魂',i:'🧩',how:'回答研究主題題'},
+  {id:'finish',n:'完食一串',i:'🍜',how:'一串問到最後'},
+  {id:'s3',n:'三天不斷',i:'🔥',how:'連續 3 天'},
+  {id:'s7',n:'一週火焰',i:'🌋',how:'連續 7 天'},
+  {id:'t10',n:'十題達成',i:'🔟',how:'累積回 10 題'},
+  {id:'t50',n:'五十題大老',i:'🏆',how:'累積回 50 題'},
+];
+function unlock(id){const b=state.stats.badges;if(b[id])return;b[id]=dayKey();save();
+  const B=BADGES.find(x=>x.id===id);toast(`🏅 解鎖徽章：${B.i} ${B.n}`);renderBadges()}
+function checkBadges(t,o){const s=state.stats;unlock('first');
+  if(/但|然而|可是/.test(t))unlock('but');if(t.length>=80)unlock('long');
+  if(/不確定|不知道|看不懂|不太懂/.test(t))unlock('honest');
+  if(o.ama)unlock('ama');if(o.theme)unlock('theme');
+  if(s.streak>=3)unlock('s3');if(s.streak>=7)unlock('s7');
+  if(s.total>=10)unlock('t10');if(s.total>=50)unlock('t50')}
+function renderBadges(){const w=$('badgeWall');if(!w)return;const b=state.stats.badges;
+  const n=BADGES.filter(x=>b[x.id]).length;
+  w.innerHTML=`<p class="bh"><b>🏅 徽章</b><span>${n}/${BADGES.length}</span></p><div class="bds">${
+    BADGES.map(x=>b[x.id]?`<span class="bd">${x.i} ${x.n}</span>`:`<span class="bd off">🔒 ${x.how}</span>`).join('')}</div>`}
+/* PDF 斷行修正 */
+function fixPdf(t){
+  t=t.replace(/\r/g,'').replace(/-\n(?=[a-z])/g,'');
+  const lines=t.split('\n').map(s=>s.trim()).filter(s=>!/^\d{1,4}$/.test(s));
+  const lens=lines.filter(Boolean).map(s=>s.length).sort((a,b)=>a-b);
+  const med=lens.length?lens[Math.floor(lens.length/2)]:0;
+  let out='',prev='';
+  for(const s of lines){
+    if(!s){if(out&&!out.endsWith('\n\n'))out+='\n\n';prev='';continue}
+    if(!out||out.endsWith('\n\n')){out+=s;prev=s;continue}
+    const endP=/[。！？!?：:」』.]$/.test(prev);
+    if(endP&&prev.length<med*0.85)out+='\n\n'+s;
+    else out+=(/[A-Za-z0-9,;]$/.test(prev)&&/^[A-Za-z0-9(]/.test(s)?' ':'')+s;
+    prev=s}
+  return out.trim()}
+function openThread(id){cur=state.threads.find(t=>t.id===id);show('thread');renderThread();
+  if(!cur.items.length)run(cur,[]);window.scrollTo(0,0)}
+function show(v){
+  const t=v==='thread';
+  $('feedView').hidden=v!=='feed';$('threadView').hidden=!t;$('crawlView').hidden=v!=='crawl';
+  $('tabs').hidden=t;$('backBtn').hidden=!t;$('newBtn').hidden=v!=='feed';
+  $('bar').hidden=true;$('exportPanel').hidden=true;$('delYes').hidden=true;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  $('subline').textContent=t?'一題一題回，用自己的話':v==='crawl'?'隨便滑，看到有感覺的就點原文':'貼一段原文，網友來問，妳來答';
+  if(!t){cur=null;renderStatsAll()}
+  if(v==='feed')renderList();
+  if(v==='crawl')renderCrawl();
+}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>show(b.dataset.v));
+
+/* ===== 爬文 ===== */
+const OA='https://api.openalex.org/works';
+const SEL='id,doi,title,publication_year,primary_location,authorships,cited_by_count,abstract_inverted_index,related_works,open_access';
+let crawlMode='rand',shown=[],loading=false,online=true;
+function C(){if(!state.crawl)state.crawl={papers:{},day:'',count:0};return state.crawl}
+const hash=s=>{let h=5381;for(const c of s)h=(h*33^c.charCodeAt(0))>>>0;return h.toString(36)};
+const cut=(s,n)=>s.length>n?s.slice(0,n)+'…':s;
+function absFrom(inv){if(!inv)return'';const a=[];for(const [w,ps] of Object.entries(inv))ps.forEach(p=>a[p]=w);return cut(a.join(' '),1500)}
+function toPaper(w,from){const au=w.authorships||[];return{
+  id:w.id.split('/').pop(),title:w.title||'（無標題）',year:w.publication_year||'',
+  venue:(w.primary_location&&w.primary_location.source&&w.primary_location.source.display_name)||'',
+  authors:au.slice(0,3).map(a=>a.author&&a.author.display_name).filter(Boolean),more:au.length>3,
+  cites:w.cited_by_count||0,abs:absFrom(w.abstract_inverted_index),
+  url:(w.open_access&&w.open_access.oa_url)||w.doi||w.id,related:(w.related_works||[]).slice(0,10).map(r=>r.split('/').pop()),
+  from,seen:false,star:false,skip:false}}
+const linkPaper=(u,title)=>({id:'L'+hash(u),title:title||cut(u.replace(/^https?:\/\/(www\.)?/,''),80),url:u,link:true,authors:[],related:[],abs:'',from:'seed',seen:false,star:false,skip:false});
+async function oa(q){const r=await fetch(OA+'?'+q);if(!r.ok)throw new Error(r.status);return (await r.json()).results||[]}
+function addPaper(p){const c=C();if(c.papers[p.id])return false;c.papers[p.id]=p;return true}
+function parseSeeds(txt){const o={dois:[],links:[],queries:[]};
+  txt.split('\n').map(s=>s.trim()).filter(Boolean).forEach(l=>{
+    const ax=l.match(/arxiv\.org\/(?:abs|pdf)\/(\d{4}\.\d{4,5})/i);
+    if(ax){o.dois.push('10.48550/arxiv.'+ax[1]);return}
+    const d=l.match(/10\.\d{4,9}\/[^\s"<>?#]+/i);
+    if(d){o.dois.push(d[0].replace(/[.,;)\]]+$/,'').toLowerCase());return}
+    if(/^https?:\/\//i.test(l)){o.links.push(l);return}
+    o.queries.push(l)});
+  return o}
+async function addSeeds(){
+  const s=parseSeeds($('seedBox').value);if(!s.dois.length&&!s.links.length&&!s.queries.length)return;
+  $('seedBtn').disabled=true;$('seedBtn').textContent='抓資料中…';let n=0;
+  s.links.forEach(u=>{if(addPaper(linkPaper(u)))n++});
+  try{
+    for(let i=0;i<s.dois.length;i+=40){const b=s.dois.slice(i,i+40);
+      const res=await oa(`filter=doi:${b.map(encodeURIComponent).join('|')}&per_page=50&select=${SEL}`);
+      res.forEach(w=>{if(addPaper(toPaper(w,'seed')))n++});
+      const got=new Set(res.map(w=>(w.doi||'').replace('https://doi.org/','').toLowerCase()));
+      b.filter(d=>!got.has(d)).forEach(d=>{if(addPaper(linkPaper('https://doi.org/'+d,d)))n++})}
+    for(const q of s.queries){const res=await oa(`search=${encodeURIComponent(q)}&per_page=10&select=${SEL}`);
+      res.forEach(w=>{if(addPaper(toPaper(w,'search:'+q)))n++})}
+    online=true;
+  }catch(e){online=false;s.dois.forEach(d=>{if(addPaper(linkPaper('https://doi.org/'+d,d)))n++})}
+  save();$('seedBox').value='';$('seedBtn').disabled=false;$('seedBtn').textContent='加入爬文池';
+  toast(n?`加入 ${n} 篇，開始逛吧`:'沒有新的論文（可能都加過了）');resetFeed()}
+function pool(){const P=Object.values(C().papers).filter(p=>!p.skip);return crawlMode==='star'?P.filter(p=>p.star):P}
+async function expand(){
+  const P=Object.values(C().papers).filter(p=>!p.skip&&!p.link&&!p.expanded&&p.related.length)
+    .map(p=>[p,(p.star?2:0)+Math.random()]).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+  const ids=[],src={};
+  for(const p of P.slice(0,3)){p.expanded=true;p.related.forEach(r=>{if(!C().papers[r]&&!ids.includes(r)){ids.push(r);src[r]=p.id}})}
+  if(!ids.length)return;
+  try{const res=await oa(`filter=openalex:${ids.slice(0,25).join('|')}&per_page=25&select=${SEL}`);
+    res.forEach(w=>{const id=w.id.split('/').pop();addPaper(toPaper(w,'rel:'+src[id]))});online=true}catch(e){online=false}
+}
+function resetFeed(){shown=[];$('cards').innerHTML='';more()}
+async function more(){
+  if(loading)return;loading=true;
+  let cand=pool().filter(p=>!shown.includes(p.id));
+  if(crawlMode==='rand'&&cand.filter(p=>!p.seen).length<5&&online){$('sentinel').textContent='正在找相關論文…';await expand();cand=pool().filter(p=>!shown.includes(p.id))}
+  cand=cand.map(p=>[p,(p.seen?1:0)+Math.random()*.9]).sort((a,b)=>a[1]-b[1]).map(x=>x[0]);
+  const c=C(),k=dayKey();if(c.day!==k){c.day=k;c.count=0}
+  cand.slice(0,5).forEach(p=>{shown.push(p.id);if(!p.seen){p.seen=true;c.count++}$('cards').appendChild(card(p))});
+  save();loading=false;renderCrawlMeta(cand.length>5);
+}
+function card(p){
+  const el=document.createElement('article');el.className='paper';el.dataset.id=p.id;
+  const src=p.from.startsWith('rel:')?C().papers[p.from.slice(4)]:null;
+  const why=src?`🐇 因為妳逛過《${esc(cut(src.title,20))}》`:p.from.startsWith('search:')?`🔎 搜尋「${esc(p.from.slice(7))}」`:'📌 妳貼的';
+  const meta=[p.authors.length?esc(p.authors.join('、'))+(p.more?' 等':''):'',p.year,p.venue?esc(p.venue):'',p.link?'':`被引用 ${p.cites}`].filter(Boolean).join(' · ');
+  el.innerHTML=`<div class="why">${why}</div><h3>${esc(p.title)}</h3>${meta?`<div class="pm">${meta}</div>`:''}
+    ${p.abs?`<p class="abs">${esc(p.abs)}</p><button class="ghost" data-a="more" style="align-self:flex-start;padding-left:0">看完整摘要</button>`
+      :`<p class="hint">${p.link?'這筆沒抓到摘要，直接點原文看':'資料庫裡沒有這篇的摘要'}</p>`}
+    <div class="pa"><a class="pbtn" href="${esc(p.url)}" target="_blank" rel="noopener">🔗 讀原文</a>
+      <button class="pbtn ${p.star?'on':''}" data-a="star">${p.star?'⭐ 已收藏':'☆ 收藏'}</button>
+      <button class="pbtn" data-a="thread">✍️ 讀完開串</button>
+      <button class="pbtn" data-a="skip">🙈 沒興趣</button></div>`;
+  return el}
+$('cards').addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;const el=b.closest('.paper'),p=C().papers[el.dataset.id];
+  const a=b.dataset.a;
+  if(a==='more')el.classList.add('open');
+  if(a==='star'){p.star=!p.star;b.classList.toggle('on',p.star);b.textContent=p.star?'⭐ 已收藏':'☆ 收藏';save();
+    if(p.star)toast('收藏了，之後會多推跟它相關的')}
+  if(a==='skip'){p.skip=true;save();el.remove();if($('cards').children.length<3)more()}
+  if(a==='thread'){show('feed');$('composer').hidden=false;
+    $('cTitle').value=`${p.authors[0]||''}${p.year?`（${p.year}）`:''}${p.title}`;$('cText').focus();toast('貼上妳畫線的那一段')}
+});
+document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{crawlMode=b.dataset.mode;
+  document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===b));resetFeed()});
+$('seedBtn').onclick=addSeeds;
+$('seedDemo').onclick=()=>{$('seedBox').value='collaborative proactive solutions\nneurodiversity teacher parent communication\nelectronic performance support system';$('seedBox').focus()};
+function renderCrawlMeta(hasMore){const c=C();const all=Object.values(c.papers).filter(p=>!p.skip);
+  $('crawlMeta').textContent=`池裡 ${all.length} 篇 · 今天逛了 ${c.day===dayKey()?c.count:0} 篇 · 收藏 ${all.filter(p=>p.star).length}`;
+  $('sentinel').textContent=!all.length?'爬文池是空的。上面貼幾個網址或關鍵字，就能開始逛。'
+    :hasMore?'往下滑還有 ↓':crawlMode==='star'?'收藏都看完了':online?'暫時沒有新的了。收藏幾篇，會長出更多相關論文。':'貼更多網址進來，就有新的可以逛。'}
+function renderCrawl(){
+  $('crawlNote').innerHTML=online
+    ?'摘要來自開放論文資料庫 OpenAlex，偶爾會抓錯篇，一定以原文為準。這裡只讓妳逛，不幫妳讀。收藏越多，推的相關論文越準。'
+    :'現在連不到論文資料庫。放在 Claude 裡的版本會被擋，部署到妳自己的網址後就會抓得到標題和摘要。這裡先顯示連結。';
+  if(!$('cards').children.length)resetFeed();else renderCrawlMeta(true)}
+new IntersectionObserver(es=>{if(es[0].isIntersecting&&!$('crawlView').hidden&&$('cards').children.length)more()}).observe($('sentinel'));
+function exportMd(th){
+  let s=`## ${th.title}\n\n> ${th.text.replace(/\n/g,'\n> ')}\n\n`;
+  th.items.forEach(it=>{
+    if(it.qid){const q=BANK.find(b=>b.id===it.qid);s+=`**Q（${PERSONAS[q.p].tag}）** ${q.q}\n\n`}
+    else if(it.who==='me')s+=`**我：** ${it.text}\n\n`});
+  return s.trim()}
+function splitPaper(text){
+  const paras=text.split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean),out=[];let buf='';
+  paras.forEach(p=>{buf=buf?buf+'\n\n'+p:p;if(buf.length>=200){out.push(buf);buf=''}});
+  if(buf){if(out.length&&buf.length<80)out[out.length-1]+='\n\n'+buf;else out.push(buf)}
+  return out.length?out:[text];
+}
+
+$('newBtn').onclick=()=>{$('composer').hidden=false;$('cTitle').focus()};
+$('cCancel').onclick=()=>{$('composer').hidden=true};
+$('composer').addEventListener('submit',e=>{e.preventDefault();
+  const title=$('cTitle').value.trim();let text=$('cText').value.trim();if(!title||!text)return;
+  if($('cPdf').checked)text=fixPdf(text);
+  const theme=$('cTheme').checked;
+  if($('cWhole').checked){
+    const chunks=splitPaper(text),base=Date.now();
+    chunks.forEach((c,i)=>state.threads.push({id:'t'+base+'_'+i,title:`${title}｜第${i+1}段`,text:c,created:base+(chunks.length-i),likes:rnd(),cast:{},theme,items:[]}));
+    save();$('composer').reset();$('composer').hidden=true;show('feed');toast(`已切成 ${chunks.length} 串`);return}
+  const th={id:'t'+Date.now(),title,text,created:Date.now(),likes:rnd(),cast:{},theme,items:[]};
+  state.threads.push(th);save();$('composer').reset();$('composer').hidden=true;openThread(th.id)});
+$('backBtn').onclick=()=>show('feed');
+$('replyForm').addEventListener('submit',e=>{e.preventDefault();
+  const v=$('replyBox').value.trim();if(!v||busy||!cur)return;
+  const th=cur,lq=th.items[th.items.length-1].qid,qb=BANK.find(b=>b.id===lq)||{};
+  const ama=lq==='ama'?judgeAma(v):null;
+  const xp=gain(v,ama&&ama.pass?15:0);
+  th.items.push({who:'me',text:v,xp,likes:0});
+  $('replyBox').value='';$('replyBox').style.height='auto';save();
+  checkBadges(v,{ama:ama&&ama.pass,theme:!!qb.theme});
+  if(ama)run(th,amaReact(ama),ama.pass?null:'ama');
+  else run(th,reactionsFor(v))});
+$('replyBox').addEventListener('input',e=>{e.target.style.height='auto';e.target.style.height=Math.min(e.target.scrollHeight,160)+'px'});
+$('exportBtn').onclick=()=>{$('exportBox').value=exportMd(cur);$('exportPanel').hidden=false};
+$('copyBtn').onclick=()=>{const box=$('exportBox');
+  navigator.clipboard.writeText(box.value).then(()=>toast('已複製')).catch(()=>{box.focus();box.select();toast('已全選，請手動複製')})};
+$('delBtn').onclick=()=>{$('delYes').hidden=false};
+$('delYes').onclick=()=>{state.threads=state.threads.filter(t=>t!==cur);save();show('feed');toast('已刪除')};
+
+load();show('feed');
+</script>
+
+</body>
+</html>
